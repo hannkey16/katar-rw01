@@ -81,9 +81,9 @@ export function ImageUploader({
       </label>
 
       {preview ? (
-        <div className="space-y-3">
-          {/* Preview */}
-          <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200">
+        <div className="space-y-2 sm:space-y-3">
+          {/* Preview - Responsive Height */}
+          <div className="relative w-full h-32 sm:h-40 md:h-48 rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200 shadow-sm">
             <Image
               src={preview}
               alt="Preview"
@@ -97,32 +97,38 @@ export function ImageUploader({
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2">
+          {/* Action Buttons - Stack on Mobile */}
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-2">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base flex-1 sm:flex-1"
+              disabled={isUploading}
             >
               <Upload className="w-4 h-4" />
-              Ganti Foto
+              <span className="hidden sm:inline">Ganti Foto</span>
+              <span className="sm:hidden">Ganti</span>
             </button>
             <button
               type="button"
               onClick={handleRemove}
-              className="flex-1 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors flex items-center justify-center gap-2"
+              className="px-3 sm:px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base flex-1"
             >
               <X className="w-4 h-4" />
-              Hapus
+              <span className="hidden sm:inline">Hapus</span>
+              <span className="sm:hidden">Hapus</span>
             </button>
           </div>
+
+          {/* File info on mobile */}
+          <p className="text-xs text-gray-500 sm:hidden">Max 5MB</p>
         </div>
       ) : (
         <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+          className={`border-2 border-dashed rounded-lg p-4 sm:p-6 md:p-8 text-center transition-colors ${
             isDragging
               ? 'border-primary bg-primary/5'
               : 'border-gray-300 hover:border-primary/50'
@@ -141,16 +147,19 @@ export function ImageUploader({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="inline-flex flex-col items-center gap-2 cursor-pointer disabled:opacity-50"
+            className="inline-flex flex-col items-center gap-2 cursor-pointer disabled:opacity-50 w-full"
           >
-            <div className="p-3 bg-gray-100 rounded-lg">
-              <Upload className="w-6 h-6 text-gray-600" />
+            <div className="p-2 sm:p-3 bg-gray-100 rounded-lg">
+              <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-900">
-                {isUploading ? 'Mengupload...' : 'Klik untuk upload atau drag foto di sini'}
+            <div className="w-full px-2">
+              <p className="text-xs sm:text-sm font-medium text-gray-900 break-words">
+                {isUploading ? 'Mengupload...' : 'Tap untuk upload'}
               </p>
-              <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF max 5MB</p>
+              <p className="text-xs text-gray-500 mt-1 hidden sm:block">
+                atau drag foto di sini
+              </p>
+              <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF - max 5MB</p>
             </div>
           </button>
         </div>
