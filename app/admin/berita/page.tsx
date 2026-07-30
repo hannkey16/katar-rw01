@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { berita } from '@/lib/data'
 import { Edit2, Trash2, Plus, Eye } from 'lucide-react'
 import { AdminModal, AdminFormGroup } from '@/components/admin-modal'
+import { ImageUploader } from '@/components/image-uploader'
 
 export default function AdminBeritaPage() {
   const [isAddingNew, setIsAddingNew] = useState(false)
@@ -14,6 +15,7 @@ export default function AdminBeritaPage() {
     kategori: '',
     ringkas: '',
     isi: '',
+    gambar: '',
   })
 
   const editingItem = berita.find((b) => b.slug === editingId)
@@ -24,7 +26,7 @@ export default function AdminBeritaPage() {
     setTimeout(() => {
       setIsLoading(false)
       setIsAddingNew(false)
-      setFormData({ judul: '', kategori: '', ringkas: '', isi: '' })
+      setFormData({ judul: '', kategori: '', ringkas: '', isi: '', gambar: '' })
     }, 500)
   }
 
@@ -118,11 +120,17 @@ export default function AdminBeritaPage() {
         title="Tambah Berita Baru"
         onClose={() => {
           setIsAddingNew(false)
-          setFormData({ judul: '', kategori: '', ringkas: '', isi: '' })
+          setFormData({ judul: '', kategori: '', ringkas: '', isi: '', gambar: '' })
         }}
         onSubmit={handleAddSubmit}
         isLoading={isLoading}
       >
+        <ImageUploader
+          onImageChange={(url) => setFormData({ ...formData, gambar: url })}
+          label="Gambar Berita"
+          required
+        />
+
         <AdminFormGroup label="Judul Berita" required>
           <input
             type="text"
@@ -183,6 +191,12 @@ export default function AdminBeritaPage() {
           onSubmit={handleEditSubmit}
           isLoading={isLoading}
         >
+          <ImageUploader
+            currentImage={editingItem.gambar}
+            onImageChange={(url) => setFormData({ ...formData, gambar: url })}
+            label="Gambar Berita"
+          />
+
           <AdminFormGroup label="Judul Berita" required>
             <input
               type="text"

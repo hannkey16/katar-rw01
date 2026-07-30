@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Edit2, Trash2, Plus } from 'lucide-react'
 import { AdminModal, AdminFormGroup } from '@/components/admin-modal'
+import { ImageUploader } from '@/components/image-uploader'
 
 export default function AdminStrukturPage() {
   const [isAddingInti, setIsAddingInti] = useState(false)
@@ -218,6 +219,11 @@ export default function AdminStrukturPage() {
         onSubmit={handleAddIntiSubmit}
         isLoading={isLoading}
       >
+        <ImageUploader
+          onImageChange={() => {}}
+          label="Foto Pengurus"
+        />
+
         <AdminFormGroup label="Nama" required>
           <input
             type="text"
@@ -255,6 +261,11 @@ export default function AdminStrukturPage() {
           onSubmit={handleEditIntiSubmit}
           isLoading={isLoading}
         >
+          <ImageUploader
+            onImageChange={() => {}}
+            label="Foto Pengurus"
+          />
+
           <AdminFormGroup label="Nama" required>
             <input
               type="text"

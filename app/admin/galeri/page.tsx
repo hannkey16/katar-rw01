@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { galeri } from '@/lib/data'
 import { Edit2, Trash2, Plus } from 'lucide-react'
 import { AdminModal, AdminFormGroup } from '@/components/admin-modal'
+import { ImageUploader } from '@/components/image-uploader'
 
 export default function AdminGaleriPage() {
   const [isAddingNew, setIsAddingNew] = useState(false)
@@ -86,24 +87,11 @@ export default function AdminGaleriPage() {
         onSubmit={handleAddSubmit}
         isLoading={isLoading}
       >
-        <AdminFormGroup label="Upload Foto" required>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              id="file-input"
-            />
-            <label
-              htmlFor="file-input"
-              className="flex flex-col items-center gap-2 cursor-pointer"
-            >
-              <Plus className="w-6 h-6 text-gray-400" />
-              <span className="text-sm text-gray-600">Klik atau drag file foto</span>
-              <span className="text-xs text-gray-500">PNG, JPG, GIF max 5MB</span>
-            </label>
-          </div>
-        </AdminFormGroup>
+        <ImageUploader
+          onImageChange={() => {}}
+          label="Upload Foto"
+          required
+        />
 
         <AdminFormGroup label="Judul Foto" required>
           <input
@@ -143,18 +131,11 @@ export default function AdminGaleriPage() {
           onSubmit={handleEditSubmit}
           isLoading={isLoading}
         >
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-900 mb-2">Preview Foto</label>
-            <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
-              <Image
-                src={galeri[editingId]?.src || ''}
-                alt="Preview"
-                width={400}
-                height={300}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
+          <ImageUploader
+            currentImage={galeri[editingId]?.src}
+            onImageChange={() => {}}
+            label="Foto Galeri"
+          />
 
           <AdminFormGroup label="Judul Foto" required>
             <input

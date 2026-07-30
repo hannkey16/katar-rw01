@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { kegiatan } from '@/lib/data'
 import { Edit2, Trash2, Plus } from 'lucide-react'
 import { AdminModal, AdminFormGroup } from '@/components/admin-modal'
+import { ImageUploader } from '@/components/image-uploader'
 
 export default function AdminKegiatanPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -13,6 +14,7 @@ export default function AdminKegiatanPage() {
     nama: '',
     kategori: '',
     deskripsi: '',
+    gambar: '',
   })
 
   const editingItem = kegiatan.find((k) => k.slug === editingId)
@@ -23,7 +25,7 @@ export default function AdminKegiatanPage() {
     setTimeout(() => {
       setIsLoading(false)
       setIsAddingNew(false)
-      setFormData({ nama: '', kategori: '', deskripsi: '' })
+      setFormData({ nama: '', kategori: '', deskripsi: '', gambar: '' })
     }, 500)
   }
 
@@ -129,11 +131,17 @@ export default function AdminKegiatanPage() {
         title="Tambah Kegiatan Baru"
         onClose={() => {
           setIsAddingNew(false)
-          setFormData({ nama: '', kategori: '', deskripsi: '' })
+          setFormData({ nama: '', kategori: '', deskripsi: '', gambar: '' })
         }}
         onSubmit={handleAddSubmit}
         isLoading={isLoading}
       >
+        <ImageUploader
+          onImageChange={(url) => setFormData({ ...formData, gambar: url })}
+          label="Gambar Kegiatan"
+          required
+        />
+
         <AdminFormGroup label="Nama Kegiatan" required>
           <input
             type="text"
@@ -181,6 +189,12 @@ export default function AdminKegiatanPage() {
           onSubmit={handleEditSubmit}
           isLoading={isLoading}
         >
+          <ImageUploader
+            currentImage={editingItem.gambar}
+            onImageChange={(url) => setFormData({ ...formData, gambar: url })}
+            label="Gambar Kegiatan"
+          />
+
           <AdminFormGroup label="Nama Kegiatan" required>
             <input
               type="text"
@@ -208,7 +222,7 @@ export default function AdminKegiatanPage() {
           <AdminFormGroup label="Tanggal">
             <input
               type="date"
-              defaultValue={editingItem.tanggal}
+              defaultValue={editingItem.tanggalIso}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </AdminFormGroup>
