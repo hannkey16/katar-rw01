@@ -1,42 +1,81 @@
 'use client'
 
-import { useState } from 'react'
-import { berita } from '@/lib/data'
+import { useState, useRef } from 'react'
+import { berita as initialBerita } from '@/lib/data'
 import { Edit2, Trash2, Plus, Eye } from 'lucide-react'
 import { AdminModal, AdminFormGroup } from '@/components/admin-modal'
 import { ImageUploader } from '@/components/image-uploader'
+import { useAdminData } from '@/lib/use-admin-data'
 
 export default function AdminBeritaPage() {
+  const { data: berita, updateItem, addItem, deleteItem } = useAdminData('berita', initialBerita)
+
   const [isAddingNew, setIsAddingNew] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    judul: '',
-    kategori: '',
-    ringkas: '',
-    isi: '',
-    gambar: '',
-  })
+
+  // Refs untuk capture form values
+  const judulInputRef = useRef<HTMLInputElement>(null)
+  const kategoriSelectRef = useRef<HTMLSelectElement>(null)
+  const penulisuInputRef = useRef<HTMLInputElement>(null)
+  const ringkasTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const isiTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const gambarImageRef = useRef<string>('')
 
   const editingItem = berita.find((b) => b.slug === editingId)
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+
+    const newBerita = {
+      slug: `berita-${Date.now()}`,
+      judul: judulInputRef.current?.value || 'Berita Baru',
+      kategori: kategoriSelectRef.current?.value || 'Sosial',
+      penulis: penulisuInputRef.current?.value || 'Admin',
+      tanggal: new Date().toLocaleDateString('id-ID'),
+      ringkas: ringkasTextareaRef.current?.value || '',
+      isi: isiTextareaRef.current?.value || '',
+      gambar: gambarImageRef.current,
+    }
+
+    addItem(newBerita)
+
     setTimeout(() => {
       setIsLoading(false)
       setIsAddingNew(false)
-      setFormData({ judul: '', kategori: '', ringkas: '', isi: '', gambar: '' })
+      gambarImageRef.current = ''
     }, 500)
   }
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!editingId) return
+
     setIsLoading(true)
+
+    const updatedData = {
+      judul: judulInputRef.current?.value || editingItem?.judul || '',
+      kategori: kategoriSelectRef.current?.value || editingItem?.kategori || '',
+      penulis: penulisuInputRef.current?.value || editingItem?.penulis || '',
+      ringkas: ringkasTextareaRef.current?.value || editingItem?.ringkas || '',
+      isi: isiTextareaRef.current?.value || editingItem?.isi || '',
+      gambar: gambarImageRef.current || editingItem?.gambar || '',
+    }
+
+    updateItem(editingId, updatedData)
+
     setTimeout(() => {
       setIsLoading(false)
       setEditingId(null)
+      gambarImageRef.current = ''
     }, 500)
+  }
+
+  const handleDelete = (slug: string) => {
+    if (confirm('Yakin ingin menghapus berita ini?')) {
+      deleteItem(slug)
+    }
   }
 
   return (
@@ -101,7 +140,10 @@ export default function AdminBeritaPage() {
                         <Edit2 className="w-4 h-4" />
                         <span className="hidden md:inline">Edit</span>
                       </button>
-                      <button className="inline-flex items-center gap-1 px-2 md:px-3 py-1 text-xs md:text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors">
+                      <button
+                        onClick={() => handleDelete(item.slug)}
+                        className="inline-flex items-center gap-1 px-2 md:px-3 py-1 text-xs md:text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                      >
                         <Trash2 className="w-4 h-4" />
                         <span className="hidden md:inline">Hapus</span>
                       </button>
@@ -120,22 +162,23 @@ export default function AdminBeritaPage() {
         title="Tambah Berita Baru"
         onClose={() => {
           setIsAddingNew(false)
-          setFormData({ judul: '', kategori: '', ringkas: '', isi: '', gambar: '' })
+          gambarImageRef.current = ''
         }}
         onSubmit={handleAddSubmit}
         isLoading={isLoading}
       >
         <ImageUploader
-          onImageChange={(url) => setFormData({ ...formData, gambar: url })}
+          onImageChange={(url) => {
+            gambarImageRef.current = url
+          }}
           label="Gambar Berita"
           required
         />
 
         <AdminFormGroup label="Judul Berita" required>
           <input
+            ref={judulInputRef}
             type="text"
-            value={formData.judul}
-            onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
             placeholder="Masukkan judul berita"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
             required
@@ -144,8 +187,7 @@ export default function AdminBeritaPage() {
 
         <AdminFormGroup label="Kategori" required>
           <select
-            value={formData.kategori}
-            onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
+            ref={kategoriSelectRef}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
             required
           >
@@ -161,8 +203,7 @@ export default function AdminBeritaPage() {
 
         <AdminFormGroup label="Ringkasan" required>
           <textarea
-            value={formData.ringkas}
-            onChange={(e) => setFormData({ ...formData, ringkas: e.target.value })}
+            ref={ringkasTextareaRef}
             placeholder="Ringkasan berita (preview)"
             rows={2}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
@@ -172,8 +213,7 @@ export default function AdminBeritaPage() {
 
         <AdminFormGroup label="Isi Berita" required>
           <textarea
-            value={formData.isi}
-            onChange={(e) => setFormData({ ...formData, isi: e.target.value })}
+            ref={isiTextareaRef}
             placeholder="Isi berita lengkap"
             rows={6}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
@@ -187,18 +227,24 @@ export default function AdminBeritaPage() {
         <AdminModal
           isOpen={!!editingId}
           title={`Edit Berita: ${editingItem.judul}`}
-          onClose={() => setEditingId(null)}
+          onClose={() => {
+            setEditingId(null)
+            gambarImageRef.current = ''
+          }}
           onSubmit={handleEditSubmit}
           isLoading={isLoading}
         >
           <ImageUploader
             currentImage={editingItem.gambar}
-            onImageChange={(url) => setFormData({ ...formData, gambar: url })}
+            onImageChange={(url) => {
+              gambarImageRef.current = url
+            }}
             label="Gambar Berita"
           />
 
           <AdminFormGroup label="Judul Berita" required>
             <input
+              ref={judulInputRef}
               type="text"
               defaultValue={editingItem.judul}
               placeholder="Judul berita"
@@ -209,6 +255,7 @@ export default function AdminBeritaPage() {
 
           <AdminFormGroup label="Kategori" required>
             <select
+              ref={kategoriSelectRef}
               defaultValue={editingItem.kategori}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
               required
@@ -224,6 +271,7 @@ export default function AdminBeritaPage() {
 
           <AdminFormGroup label="Penulis">
             <input
+              ref={penulisuInputRef}
               type="text"
               defaultValue={editingItem.penulis}
               placeholder="Nama penulis"
@@ -233,6 +281,7 @@ export default function AdminBeritaPage() {
 
           <AdminFormGroup label="Ringkasan">
             <textarea
+              ref={ringkasTextareaRef}
               defaultValue={editingItem.ringkas}
               placeholder="Ringkasan berita"
               rows={2}
@@ -242,6 +291,7 @@ export default function AdminBeritaPage() {
 
           <AdminFormGroup label="Isi Berita">
             <textarea
+              ref={isiTextareaRef}
               defaultValue={editingItem.isi}
               placeholder="Isi berita"
               rows={6}
@@ -252,10 +302,9 @@ export default function AdminBeritaPage() {
       )}
 
       {/* Info Box */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-        <p className="text-blue-800">
-          Admin dapat menambah, mengedit, dan menghapus berita dari sini. Setiap berita yang
-          diubah akan langsung ter-update di halaman berita public.
+      <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-sm">
+        <p className="text-green-800">
+          ✓ Data tersimpan di browser Anda menggunakan localStorage. Perubahan akan tetap ada meskipun halaman di-refresh. Untuk production, integrasikan dengan database backend.
         </p>
       </div>
     </div>

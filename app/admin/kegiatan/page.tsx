@@ -1,12 +1,15 @@
 'use client'
 
-import { useState } from 'react'
-import { kegiatan } from '@/lib/data'
+import { useState, useEffect, useRef } from 'react'
+import { kegiatan as initialKegiatan } from '@/lib/data'
 import { Edit2, Trash2, Plus } from 'lucide-react'
 import { AdminModal, AdminFormGroup } from '@/components/admin-modal'
 import { ImageUploader } from '@/components/image-uploader'
+import { useAdminData } from '@/lib/use-admin-data'
 
 export default function AdminKegiatanPage() {
+  const { data: kegiatan, updateItem, addItem, deleteItem } = useAdminData('kegiatan', initialKegiatan)
+  
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isAddingNew, setIsAddingNew] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -17,25 +20,70 @@ export default function AdminKegiatanPage() {
     gambar: '',
   })
 
+  // Refs untuk capture form values
+  const namaInputRef = useRef<HTMLInputElement>(null)
+  const kategoriSelectRef = useRef<HTMLSelectElement>(null)
+  const tanggalInputRef = useRef<HTMLInputElement>(null)
+  const statusSelectRef = useRef<HTMLSelectElement>(null)
+  const deskripsiTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const gambarImageRef = useRef<string>('')
+
   const editingItem = kegiatan.find((k) => k.slug === editingId)
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    
+    const newKegiatan = {
+      slug: `kegiatan-${Date.now()}`,
+      nama: namaInputRef.current?.value || 'Kegiatan Baru',
+      kategori: kategoriSelectRef.current?.value || 'Sosial',
+      tanggal: new Date().toLocaleDateString('id-ID'),
+      tanggalIso: new Date().toISOString().split('T')[0],
+      status: 'Akan Datang' as const,
+      ringkas: deskripsiTextareaRef.current?.value || '',
+      gambar: gambarImageRef.current,
+    }
+
+    addItem(newKegiatan)
+
     setTimeout(() => {
       setIsLoading(false)
       setIsAddingNew(false)
       setFormData({ nama: '', kategori: '', deskripsi: '', gambar: '' })
+      gambarImageRef.current = ''
     }, 500)
   }
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!editingId) return
+
     setIsLoading(true)
+
+    const updatedData = {
+      nama: namaInputRef.current?.value || editingItem?.nama || '',
+      kategori: kategoriSelectRef.current?.value || editingItem?.kategori || '',
+      tanggalIso: tanggalInputRef.current?.value || editingItem?.tanggalIso || '',
+      tanggal: new Date(tanggalInputRef.current?.value || '').toLocaleDateString('id-ID'),
+      status: (statusSelectRef.current?.value || editingItem?.status || 'Akan Datang') as const,
+      ringkas: deskripsiTextareaRef.current?.value || editingItem?.ringkas || '',
+      gambar: gambarImageRef.current || editingItem?.gambar || '',
+    }
+
+    updateItem(editingId, updatedData)
+
     setTimeout(() => {
       setIsLoading(false)
       setEditingId(null)
+      gambarImageRef.current = ''
     }, 500)
+  }
+
+  const handleDelete = (slug: string) => {
+    if (confirm('Yakin ingin menghapus kegiatan ini?')) {
+      deleteItem(slug)
+    }
   }
 
   return (
@@ -112,7 +160,10 @@ export default function AdminKegiatanPage() {
                         <Edit2 className="w-4 h-4" />
                         <span className="hidden md:inline">Edit</span>
                       </button>
-                      <button className="inline-flex items-center gap-1 px-2 md:px-3 py-1 text-xs md:text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors">
+                      <button
+                        onClick={() => handleDelete(item.slug)}
+                        className="inline-flex items-center gap-1 px-2 md:px-3 py-1 text-xs md:text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                      >
                         <Trash2 className="w-4 h-4" />
                         <span className="hidden md:inline">Hapus</span>
                       </button>
@@ -137,16 +188,17 @@ export default function AdminKegiatanPage() {
         isLoading={isLoading}
       >
         <ImageUploader
-          onImageChange={(url) => setFormData({ ...formData, gambar: url })}
+          onImageChange={(url) => {
+            gambarImageRef.current = url
+          }}
           label="Gambar Kegiatan"
           required
         />
 
         <AdminFormGroup label="Nama Kegiatan" required>
           <input
+            ref={namaInputRef}
             type="text"
-            value={formData.nama}
-            onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
             placeholder="Masukkan nama kegiatan"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
             required
@@ -155,8 +207,7 @@ export default function AdminKegiatanPage() {
 
         <AdminFormGroup label="Kategori" required>
           <select
-            value={formData.kategori}
-            onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
+            ref={kategoriSelectRef}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
             required
           >
@@ -171,8 +222,7 @@ export default function AdminKegiatanPage() {
 
         <AdminFormGroup label="Deskripsi Kegiatan">
           <textarea
-            value={formData.deskripsi}
-            onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+            ref={deskripsiTextareaRef}
             placeholder="Masukkan deskripsi kegiatan"
             rows={4}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
@@ -191,12 +241,15 @@ export default function AdminKegiatanPage() {
         >
           <ImageUploader
             currentImage={editingItem.gambar}
-            onImageChange={(url) => setFormData({ ...formData, gambar: url })}
+            onImageChange={(url) => {
+              gambarImageRef.current = url
+            }}
             label="Gambar Kegiatan"
           />
 
           <AdminFormGroup label="Nama Kegiatan" required>
             <input
+              ref={namaInputRef}
               type="text"
               defaultValue={editingItem.nama}
               placeholder="Nama kegiatan"
@@ -207,6 +260,7 @@ export default function AdminKegiatanPage() {
 
           <AdminFormGroup label="Kategori" required>
             <select
+              ref={kategoriSelectRef}
               defaultValue={editingItem.kategori}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
               required
@@ -221,6 +275,7 @@ export default function AdminKegiatanPage() {
 
           <AdminFormGroup label="Tanggal">
             <input
+              ref={tanggalInputRef}
               type="date"
               defaultValue={editingItem.tanggalIso}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -229,6 +284,7 @@ export default function AdminKegiatanPage() {
 
           <AdminFormGroup label="Status">
             <select
+              ref={statusSelectRef}
               defaultValue={editingItem.status}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
             >
@@ -240,6 +296,7 @@ export default function AdminKegiatanPage() {
 
           <AdminFormGroup label="Deskripsi">
             <textarea
+              ref={deskripsiTextareaRef}
               defaultValue={editingItem.ringkas}
               placeholder="Deskripsi kegiatan"
               rows={4}
@@ -250,10 +307,9 @@ export default function AdminKegiatanPage() {
       )}
 
       {/* Info Box */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-        <p className="text-blue-800">
-          Catatan: Ini adalah prototype admin panel. Data saat ini tersimpan statis. Untuk
-          production, integrasi dengan database dan API backend yang proper.
+      <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-sm">
+        <p className="text-green-800">
+          ✓ Data tersimpan di browser Anda menggunakan localStorage. Perubahan akan tetap ada meskipun halaman di-refresh. Untuk production, integrasikan dengan database backend.
         </p>
       </div>
     </div>
